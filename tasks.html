@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Детектив SQL: План розслідування</title>
+    <script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen overflow-hidden flex flex-col md:flex-row">
+    <nav class="bg-white w-full md:w-64 border-r border-slate-200 flex-shrink-0 flex flex-col h-auto md:h-full z-10 shadow-sm">
+        <div class="p-4 border-b border-slate-200 bg-slate-100 flex items-center gap-2"><span class="text-2xl">&#128187;</span><h1 class="font-bold text-lg leading-tight text-slate-800">Детектив SQL</h1></div>
+        <div class="flex flex-row md:flex-col p-2 gap-1" id="nav-menu">
+            <button onclick="window.location.href='index.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100">Брифінг</button>
+            <button onclick="window.location.href='roles.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100">Твоє досьє</button>
+            <button onclick="window.location.href='tasks.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100">План</button>
+            <button onclick="window.location.href='criteria.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100">Оцінювання</button>
+            <button onclick="window.location.href='sources.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100">Джерела</button>
+            <div class="border-t mt-4 pt-2"></div>
+            <button onclick="window.location.href='stage1.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100">Етап 1</button>
+            <button id="nav-stage2" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-400 opacity-50" disabled>Етап 2</button>
+            <button id="nav-stage3" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-400 opacity-50" disabled>Етап 3</button>
+        </div>
+    </nav>
+    <main class="flex-1 overflow-y-auto p-4 md:p-8">
+        <section id="tasks" class="max-w-4xl mx-auto">
+            <h2 class="text-3xl font-bold text-slate-800 mb-6 border-b pb-2">План розслідування</h2>
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 space-y-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">1</div>
+                    <p><strong>Етап 1:</strong> Аналіз метаданих. Отримай Код №1.</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-slate-300 text-slate-600 rounded-full flex items-center justify-center font-bold">2</div>
+                    <p><strong>Етап 2:</strong> Дешифрування логіки. Отримай Код №2.</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-slate-300 text-slate-600 rounded-full flex items-center justify-center font-bold">3</div>
+                    <p><strong>Етап 3:</strong> Прямий доступ та фінальний запит.</p>
+                </div>
+            </div>
+            <div class="mt-8 text-right">
+                <button onclick="window.location.href='stage1.html'" class="bg-blue-600 text-white font-bold py-2 px-6 rounded">Почати Етап 1 &#10148;</button>
+            </div>
+        </section>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>

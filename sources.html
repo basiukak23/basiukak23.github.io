@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Детектив SQL: Джерела</title>
+    <script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen overflow-hidden flex flex-col md:flex-row">
+    <nav class="bg-white w-full md:w-64 border-r border-slate-200 flex flex-col h-full shadow-sm">
+        <div class="p-4 border-b bg-slate-100 flex items-center gap-2"><h1 class="font-bold text-lg">Детектив SQL</h1></div>
+        <div class="flex flex-col p-2 gap-1">
+            <button onclick="window.location.href='index.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">Брифінг</button>
+            <button onclick="window.location.href='roles.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">Досьє</button>
+            <button onclick="window.location.href='tasks.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">План</button>
+            <button onclick="window.location.href='criteria.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">Оцінювання</button>
+            <button onclick="window.location.href='sources.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">Джерела</button>
+            <div class="border-t my-2"></div>
+            <button onclick="window.location.href='stage1.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">Етап 1</button>
+            <button id="nav-stage2" class="nav-link text-left px-4 py-3 rounded-md text-sm opacity-50" disabled>Етап 2</button>
+            <button id="nav-stage3" class="nav-link text-left px-4 py-3 rounded-md text-sm opacity-50" disabled>Етап 3</button>
+        </div>
+    </nav>
+    <main class="flex-1 overflow-y-auto p-8">
+        <h2 class="text-3xl font-bold mb-6 border-b pb-2">Довідник детектива</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a href="https://www.w3schools.com/sql/" target="_blank" class="p-5 bg-white border rounded-lg hover:shadow-md">
+                <h3 class="font-bold text-blue-600 mb-2">W3Schools SQL</h3>
+                <p class="text-sm text-slate-600">Найкращий інтерактивний довідник.</p>
+            </a>
+            <a href="https://sqlbolt.com/" target="_blank" class="p-5 bg-white border rounded-lg hover:shadow-md">
+                <h3 class="font-bold text-blue-600 mb-2">SQLBolt</h3>
+                <p class="text-sm text-slate-600">Інтерактивні уроки в браузері.</p>
+            </a>
+            <a href="https://www.w3schools.com/sql/sql_datatypes.asp" target="_blank" class="p-5 bg-white border rounded-lg hover:shadow-md">
+                <h3 class="font-bold text-blue-600 mb-2">Типи Даних</h3>
+                <p class="text-sm text-slate-600">Шпаргалка по типах даних SQL.</p>
+            </a>
+        </div>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,1430 @@
+<!doctype html>
+<html lang="uk">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Детектив SQL: Пошук зниклих даних</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            /* Базові стилі та анімації */
+            body {
+                font-family: "Inter", sans-serif;
+            }
+            .chart-container {
+                position: relative;
+                width: 100%;
+                max-width: 500px;
+                margin-left: auto;
+                margin-right: auto;
+                height: 250px;
+                max-height: 300px;
+            }
+            @media (min-width: 768px) {
+                .chart-container {
+                    height: 300px;
+                }
+            }
+
+            /* Стилі для інтерактивних елементів */
+            .nav-link.active {
+                background-color: #e2e8f0;
+                color: #1e293b;
+                font-weight: bold;
+                border-left: 4px solid #2563eb;
+            }
+            .quiz-btn.selected {
+                background-color: #3b82f6;
+                color: white;
+                border-color: #2563eb;
+            }
+
+            .match-btn {
+                transition: all 0.2s ease;
+            }
+            .match-btn.selected {
+                background-color: #bfdbfe;
+                border-color: #3b82f6;
+                transform: scale(1.02);
+            }
+            .match-btn.matched {
+                background-color: #bbf7d0;
+                color: #166534;
+                border-color: #22c55e;
+                opacity: 0.8;
+                pointer-events: none;
+            }
+            .match-btn.error {
+                background-color: #fecaca;
+                border-color: #ef4444;
+                animation: shake 0.4s;
+            }
+
+            @keyframes shake {
+                0%,
+                100% {
+                    transform: translateX(0);
+                }
+                25% {
+                    transform: translateX(-5px);
+                }
+                75% {
+                    transform: translateX(5px);
+                }
+            }
+
+            /* Стиль терміналу */
+            .terminal-text {
+                font-family: monospace;
+                color: #4ade80;
+            }
+            .terminal-bg {
+                background-color: #0f172a;
+            }
+        </style>
+    </head>
+    <body
+        class="bg-slate-50 text-slate-800 h-screen overflow-hidden flex flex-col md:flex-row"
+    >
+        <!-- Chosen Palette: Світлий фон (slate-50) для основної читабельності, темний текст (slate-800). Акценти синього (blue-600) для інтерактивних елементів та навігації. Темно-синій/чорний (slate-900) для блоків "терміналу", щоб передати хакерську атмосферу без затемнення всього додатку. Червоний (red-600) для критичних сповіщень. -->
+
+        <!-- Application Structure Plan: Додаток структуровано як інтерактивний дашборд. Ліворуч - навігаційна панель (або верхня на мобільних), яка імітує сторінки Google Sites. Праворуч - область контенту, яка динамічно оновлюється без перезавантаження сторінки (SPA). Секції містять вбудовану логіку (вікторини, міні-ігри), що усуває потребу у зовнішніх Google Формах чи LearningApps, роблячи досвід безшовним. Етапи 2 та 3 заблоковані до проходження попередніх. -->
+
+        <!-- Visualization & Content Choices:
+         - Вступ: Кількісні дані (Вкрадені кошти) -> Chart.js Donut Chart -> Мета: візуалізувати масштаб загрози та створити відчуття терміновості.
+         - Етап 1 (Метадані): Інтерактивний тест -> HTML/JS кнопки -> Мета: перевірка знань з валідацією. Без SVG.
+         - Етап 2 (Логіка): Гра "Знайди пару" -> HTML Grid/Flex + JS логіка -> Мета: організація знань (Matching). Використовує кольорове кодування замість ліній для з'єднання.
+         - Етап 3 (Фінал): Текстове поле стилізоване під SQL-термінал -> Мета: практичне застосування (зміна/вивід).
+    -->
+
+        <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+        <!-- Sidebar Navigation -->
+        <nav
+            class="bg-white w-full md:w-64 border-r border-slate-200 flex-shrink-0 flex flex-col h-auto md:h-full z-10 shadow-sm"
+        >
+            <div
+                class="p-4 border-b border-slate-200 bg-slate-100 flex items-center gap-2"
+            >
+                <span class="text-2xl">&#128187;</span>
+                <h1 class="font-bold text-lg leading-tight text-slate-800">
+                    Детектив SQL<br /><span
+                        class="text-sm font-normal text-slate-500"
+                        >Пошук зниклих даних</span
+                    >
+                </h1>
+            </div>
+            <div
+                class="flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto p-2 gap-1"
+                id="nav-menu"
+            >
+                <button
+                    onclick="showSection('intro', this)"
+                    class="nav-link active text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal"
+                >
+                    &#127968; Секретний брифінг
+                </button>
+                <button
+                    onclick="showSection('roles', this)"
+                    class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal"
+                >
+                    &#128100; Твоє досьє
+                </button>
+                <button
+                    onclick="showSection('tasks', this)"
+                    class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal"
+                >
+                    &#128203; План розслідування
+                </button>
+                <button
+                    onclick="showSection('criteria', this)"
+                    class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal"
+                >
+                    &#127942; Оцінювання
+                </button>
+                <button
+                    onclick="showSection('sources', this)"
+                    class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal"
+                >
+                    &#128218; Джерела
+                </button>
+
+                <div
+                    class="mt-2 md:mt-4 mb-2 border-t border-slate-200 pt-2 px-2 text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:block"
+                >
+                    Місії
+                </div>
+
+                <button
+                    onclick="showSection('stage1', this)"
+                    class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal"
+                >
+                    &#128275; Етап 1: Метадані
+                </button>
+                <button
+                    id="nav-stage2"
+                    onclick="showSection('stage2', this)"
+                    class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-400 opacity-50 cursor-not-allowed whitespace-nowrap md:whitespace-normal"
+                    disabled
+                >
+                    &#128274; Етап 2: Логіка
+                </button>
+                <button
+                    id="nav-stage3"
+                    onclick="showSection('stage3', this)"
+                    class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-400 opacity-50 cursor-not-allowed whitespace-nowrap md:whitespace-normal"
+                    disabled
+                >
+                    &#128274; Етап 3: Фінал
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main
+            class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth"
+            id="main-content"
+        >
+            <!-- Section: Вступ -->
+            <section id="intro" class="max-w-4xl mx-auto block animate-fade-in">
+                <div
+                    class="bg-red-50 border border-red-200 rounded-lg p-6 mb-8 shadow-sm relative overflow-hidden"
+                >
+                    <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl">
+                        &#9888;
+                    </div>
+                    <h2
+                        class="text-2xl font-bold text-red-700 mb-2 flex items-center gap-2"
+                    >
+                        КРИТИЧНЕ ОПОВІЩЕННЯ
+                    </h2>
+                    <p class="text-red-600 font-mono text-sm mb-4">
+                        СИСТЕМА БЕЗПЕКИ КОМПРОМЕТОВАНА
+                    </p>
+                    <div class="prose prose-slate max-w-none text-slate-700">
+                        <p>
+                            Увага! Сьогодні о
+                            <strong>03:00 за місцевим часом</strong> центральна
+                            база даних «GlobalFinance Bank» зазнала
+                            цілеспрямованої кібератаки. Невідомий хакер, який
+                            називає себе <em>NullPointer</em>, обійшов
+                            брандмауер та втрутився в таблиці транзакцій.
+                        </p>
+                        <p>
+                            На щастя, він не зміг видалити дані повністю.
+                            Замість цього він зашифрував доступ до критично
+                            важливих журналів і сховав інформацію про те, куди
+                            були переведені викрадені кошти.
+                        </p>
+                        <p>
+                            Поліція розводить руками, а старші адміністратори
+                            баз даних заблоковані у системі. Банку загрожує
+                            банкрутство. Нам потрібна людина, яка мислить як
+                            логічна машина і розуміє мову баз даних. Час пішов.
+                            <strong>Чи готові ви взятися за цю справу?</strong>
+                        </p>
+                    </div>
+                </div>
+
+                <div
+                    class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-8"
+                >
+                    <h3
+                        class="text-lg font-bold mb-4 text-slate-800 text-center"
+                    >
+                        Оцінка фінансового ризику
+                    </h3>
+                    <p class="text-sm text-slate-500 text-center mb-4">
+                        Співвідношення викрадених коштів до заблокованих активів
+                        клієнтів.
+                    </p>
+                    <div class="chart-container">
+                        <canvas id="fundsChart"></canvas>
+                    </div>
+                    <div class="text-center mt-4">
+                        <button
+                            onclick="
+                                showSection(
+                                    'roles',
+                                    document.querySelectorAll('.nav-link')[1],
+                                )
+                            "
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded transition-colors shadow-md"
+                        >
+                            Ознайомитись з Досьє &#10148;
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Ролі -->
+            <section
+                id="roles"
+                class="max-w-4xl mx-auto hidden animate-fade-in"
+            >
+                <h2
+                    class="text-3xl font-bold text-slate-800 mb-6 border-b pb-2"
+                >
+                    Твоє досьє
+                </h2>
+                <div
+                    class="mb-6 bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500 text-sm text-slate-700"
+                >
+                    <strong>Контекст розділу:</strong> Тут описана ваша роль у
+                    цій симуляції. Уважно вивчіть свої можливості та кінцеву
+                    мету, щоб розуміти, якими інструментами ви володієте для
+                    порятунку бази даних.
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div
+                        class="bg-white p-6 rounded-lg shadow-sm border border-slate-200"
+                    >
+                        <div
+                            class="flex items-center gap-4 mb-4 pb-4 border-b border-slate-100"
+                        >
+                            <div
+                                class="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center text-3xl"
+                            >
+                                &#128373;
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-lg">Junior DBA</h3>
+                                <p class="text-slate-500 text-sm">
+                                    Молодший адміністратор / Цифровий детектив
+                                </p>
+                            </div>
+                        </div>
+                        <h4 class="font-bold text-slate-700 mb-2">
+                            &#127919; Твоя місія:
+                        </h4>
+                        <p class="text-slate-600 mb-4">
+                            Пройти по цифрових слідах хакера
+                            <em>NullPointer</em>, зламати залишені ним
+                            "заглушки" в системі, відновити цілісність бази та
+                            знайти номер рахунку, на який він вивів вкрадені
+                            гроші.
+                        </p>
+                    </div>
+
+                    <div
+                        class="bg-white p-6 rounded-lg shadow-sm border border-slate-200"
+                    >
+                        <h4 class="font-bold text-slate-700 mb-4">
+                            &#129520; Твій інвентар:
+                        </h4>
+                        <ul class="space-y-3 text-slate-600">
+                            <li class="flex items-start gap-2">
+                                <span class="text-blue-500 mt-1">&#9656;</span>
+                                <div>
+                                    <strong>Термінал (Твій мозок):</strong>
+                                    Базові знання SQL-запитів.
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-blue-500 mt-1">&#9656;</span>
+                                <div>
+                                    <strong>База знань банку:</strong> Доступ до
+                                    офіційної документації.
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="text-blue-500 mt-1">&#9656;</span>
+                                <div>
+                                    <strong>Логіка та дедукція:</strong>
+                                    Здатність аналізувати структуру таблиць.
+                                </div>
+                            </li>
+                        </ul>
+                        <div
+                            class="mt-4 p-3 bg-yellow-50 text-yellow-800 text-sm rounded border border-yellow-200"
+                        >
+                            <em
+                                >Увага: Використання інтуїції вітається, але
+                                комп'ютер розуміє лише точний синтаксис!</em
+                            >
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-8 text-right">
+                    <button
+                        onclick="
+                            showSection(
+                                'tasks',
+                                document.querySelectorAll('.nav-link')[2],
+                            )
+                        "
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded transition-colors"
+                    >
+                        Далі: План розслідування &#10148;
+                    </button>
+                </div>
+            </section>
+
+            <!-- Section: Завдання -->
+            <section
+                id="tasks"
+                class="max-w-4xl mx-auto hidden animate-fade-in"
+            >
+                <h2
+                    class="text-3xl font-bold text-slate-800 mb-6 border-b pb-2"
+                >
+                    План розслідування
+                </h2>
+                <div
+                    class="mb-6 bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500 text-sm text-slate-700"
+                >
+                    <strong>Контекст розділу:</strong> Це дорожня карта квесту.
+                    Хакер встановив 3 рівні захисту. Вам потрібно пройти їх
+                    послідовно. Ознайомтеся з алгоритмом дій перед початком
+                    злому.
+                </div>
+
+                <div
+                    class="bg-white p-6 rounded-lg shadow-sm border border-slate-200"
+                >
+                    <p class="mb-6 text-slate-700">
+                        Хакер встановив багаторівневий захист. Щоб дістатися до
+                        фінальної таблиці з вкраденими грошима, тобі потрібно
+                        пройти 3 рівні авторизації.
+                    </p>
+
+                    <div
+                        class="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent"
+                    >
+                        <div
+                            class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active"
+                        >
+                            <div
+                                class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-blue-500 text-white font-bold shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10"
+                            >
+                                1
+                            </div>
+                            <div
+                                class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-slate-50 p-4 rounded-lg border border-slate-200 shadow-sm"
+                            >
+                                <h4
+                                    class="font-bold text-slate-800 text-lg mb-1"
+                                >
+                                    Етап 1: "Аналіз метаданих"
+                                </h4>
+                                <p class="text-sm text-slate-600">
+                                    Виконай завдання на перевірку типів даних.
+                                    Правильна відповідь дасть тобі
+                                    <strong>Код доступу №1</strong>.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div
+                            class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group"
+                        >
+                            <div
+                                class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-slate-300 text-slate-600 font-bold shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10"
+                            >
+                                2
+                            </div>
+                            <div
+                                class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-slate-50 p-4 rounded-lg border border-slate-200 shadow-sm"
+                            >
+                                <h4
+                                    class="font-bold text-slate-800 text-lg mb-1"
+                                >
+                                    Етап 2: "Дешифрування логіки"
+                                </h4>
+                                <p class="text-sm text-slate-600">
+                                    Встанови відповідність між командами SQL та
+                                    їх призначенням. Отримай
+                                    <strong>Код доступу №2</strong>.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div
+                            class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group"
+                        >
+                            <div
+                                class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-slate-300 text-slate-600 font-bold shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10"
+                            >
+                                3
+                            </div>
+                            <div
+                                class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-slate-50 p-4 rounded-lg border border-slate-200 shadow-sm"
+                            >
+                                <h4
+                                    class="font-bold text-slate-800 text-lg mb-1"
+                                >
+                                    Етап 3: "Прямий доступ"
+                                </h4>
+                                <p class="text-sm text-slate-600">
+                                    Використай здобуті коди, щоб отримати доступ
+                                    до терміналу. Напиши правильний SQL-запит,
+                                    щоб знайти рахунок.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div
+                            class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group"
+                        >
+                            <div
+                                class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-red-500 text-white font-bold shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10"
+                            >
+                                &#127937;
+                            </div>
+                            <div
+                                class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-red-50 p-4 rounded-lg border border-red-200 shadow-sm"
+                            >
+                                <h4 class="font-bold text-red-800 text-lg mb-1">
+                                    Фінал
+                                </h4>
+                                <p class="text-sm text-red-700">
+                                    Введи знайдений номер рахунку у фінальний
+                                    звіт, щоб врятувати банк.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-8 text-right">
+                    <button
+                        onclick="
+                            showSection(
+                                'stage1',
+                                document.querySelectorAll('.nav-link')[6],
+                            )
+                        "
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded transition-colors shadow-md"
+                    >
+                        Почати Етап 1 &#10148;
+                    </button>
+                </div>
+            </section>
+
+            <!-- Section: Критерії -->
+            <section
+                id="criteria"
+                class="max-w-4xl mx-auto hidden animate-fade-in"
+            >
+                <h2
+                    class="text-3xl font-bold text-slate-800 mb-6 border-b pb-2"
+                >
+                    Критерії оцінювання
+                </h2>
+                <div
+                    class="bg-white p-0 rounded-lg shadow-sm border border-slate-200 overflow-hidden"
+                >
+                    <div class="bg-slate-100 p-4 border-b border-slate-200">
+                        <p class="text-slate-700">
+                            За успішне розслідування керівництво банку
+                            (викладач) нарахує тобі бали. <br /><strong
+                                >Максимальна винагорода за лабораторну роботу —
+                                8 балів.</strong
+                            >
+                        </p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr
+                                    class="bg-slate-50 text-slate-600 uppercase text-xs tracking-wider border-b border-slate-200"
+                                >
+                                    <th class="p-4 font-bold">
+                                        Етап розслідування
+                                    </th>
+                                    <th class="p-4 font-bold">Завдання</th>
+                                    <th class="p-4 font-bold text-center">
+                                        Кількість балів
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody
+                                class="text-slate-700 text-sm divide-y divide-slate-100"
+                            >
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="p-4 font-medium">Етап 1</td>
+                                    <td class="p-4">
+                                        Проходження тесту "Чи правдиве
+                                        твердження?" (Типи даних)
+                                    </td>
+                                    <td
+                                        class="p-4 text-center font-bold text-blue-600"
+                                    >
+                                        2 бали
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="p-4 font-medium">Етап 2</td>
+                                    <td class="p-4">
+                                        Вирішення головоломки "Відповідність"
+                                        (SQL оператори)
+                                    </td>
+                                    <td
+                                        class="p-4 text-center font-bold text-blue-600"
+                                    >
+                                        2 бали
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="p-4 font-medium">Етап 3</td>
+                                    <td class="p-4">
+                                        Написання правильного фінального
+                                        SQL-запиту (SELECT)
+                                    </td>
+                                    <td
+                                        class="p-4 text-center font-bold text-blue-600"
+                                    >
+                                        3 бали
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="p-4 font-medium">Дисципліна</td>
+                                    <td class="p-4">
+                                        Своєчасна здача фінального звіту-форми
+                                    </td>
+                                    <td
+                                        class="p-4 text-center font-bold text-blue-600"
+                                    >
+                                        1 бал
+                                    </td>
+                                </tr>
+                                <tr
+                                    class="bg-slate-100 font-bold border-t-2 border-slate-200"
+                                >
+                                    <td class="p-4 text-right" colspan="2">
+                                        РАЗОМ:
+                                    </td>
+                                    <td
+                                        class="p-4 text-center text-lg text-slate-800"
+                                    >
+                                        8 балів
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Джерела -->
+            <section
+                id="sources"
+                class="max-w-4xl mx-auto hidden animate-fade-in"
+            >
+                <h2
+                    class="text-3xl font-bold text-slate-800 mb-6 border-b pb-2"
+                >
+                    Довідник детектива
+                </h2>
+                <p class="mb-6 text-slate-700">
+                    Справжній професіонал завжди знає, де шукати інформацію.
+                    Якщо ти забув синтаксис або сумніваєшся у виборі оператора,
+                    використовуй ці офіційні ресурси:
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <a
+                        href="https://www.w3schools.com/sql/"
+                        target="_blank"
+                        class="block p-5 bg-white border border-slate-200 rounded-lg hover:shadow-md hover:border-blue-300 transition-all group"
+                    >
+                        <h3
+                            class="font-bold text-lg text-blue-600 group-hover:text-blue-800 mb-2"
+                        >
+                            W3Schools SQL
+                        </h3>
+                        <p class="text-sm text-slate-600 mb-2">
+                            Найкращий інтерактивний довідник з прикладами.
+                        </p>
+                        <span
+                            class="text-xs text-blue-500 uppercase font-bold tracking-wider"
+                            >Базовий синтаксис &#8599;</span
+                        >
+                    </a>
+                    <a
+                        href="https://sqlbolt.com/"
+                        target="_blank"
+                        class="block p-5 bg-white border border-slate-200 rounded-lg hover:shadow-md hover:border-blue-300 transition-all group"
+                    >
+                        <h3
+                            class="font-bold text-lg text-blue-600 group-hover:text-blue-800 mb-2"
+                        >
+                            SQLBolt
+                        </h3>
+                        <p class="text-sm text-slate-600 mb-2">
+                            Інтерактивні уроки прямо в браузері.
+                        </p>
+                        <span
+                            class="text-xs text-blue-500 uppercase font-bold tracking-wider"
+                            >Навчання &#8599;</span
+                        >
+                    </a>
+                    <a
+                        href="https://www.w3schools.com/sql/sql_datatypes.asp"
+                        target="_blank"
+                        class="block p-5 bg-white border border-slate-200 rounded-lg hover:shadow-md hover:border-blue-300 transition-all group"
+                    >
+                        <h3
+                            class="font-bold text-lg text-blue-600 group-hover:text-blue-800 mb-2"
+                        >
+                            Типи Даних
+                        </h3>
+                        <p class="text-sm text-slate-600 mb-2">
+                            Шпаргалка по типах даних в SQL.
+                        </p>
+                        <span
+                            class="text-xs text-blue-500 uppercase font-bold tracking-wider"
+                            >Довідник &#8599;</span
+                        >
+                    </a>
+                </div>
+            </section>
+
+            <!-- Section: Stage 1 -->
+            <section
+                id="stage1"
+                class="max-w-4xl mx-auto hidden animate-fade-in"
+            >
+                <h2
+                    class="text-3xl font-bold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2"
+                >
+                    <span class="text-blue-600">&#128275;</span> Етап 1:
+                    Відновлення типів даних
+                </h2>
+                <div
+                    class="mb-6 bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500 text-sm text-slate-700"
+                >
+                    <strong>Контекст розділу:</strong> Це перше практичне
+                    випробування. Воно перевіряє теоретичні знання типів даних,
+                    згідно з описом квесту. Пройдіть вікторину, щоб згенерувати
+                    пароль для розблокування наступного етапу.
+                </div>
+
+                <div
+                    class="bg-slate-900 rounded-t-lg p-4 font-mono text-green-400 text-sm border border-slate-800"
+                >
+                    > Лог системи: Система ініціалізації таблиць пошкоджена.
+                    Визначення типів даних порушено. Очікується ручна
+                    верифікація метаданих.
+                </div>
+
+                <div
+                    class="bg-white p-6 rounded-b-lg shadow-sm border border-t-0 border-slate-200 mb-8"
+                >
+                    <p class="mb-6 text-slate-700">
+                        Щоб отримати доступ до першого шлюзу, перевір таблицю
+                        системних змінних. Визнач, які твердження
+                        <strong>ІСТИННІ (True)</strong>, а які
+                        <strong>ХИБНІ (False)</strong>.
+                    </p>
+
+                    <div class="space-y-4" id="quiz-container">
+                        <!-- Запитання генеруються через JS -->
+                    </div>
+
+                    <div
+                        class="mt-8 pt-6 border-t border-slate-200 flex flex-col sm:flex-row gap-4 items-center justify-between"
+                    >
+                        <div
+                            class="font-mono bg-slate-100 px-4 py-2 rounded text-slate-600 border border-slate-200 w-full sm:w-auto text-center"
+                            id="s1-display"
+                        >
+                            Пароль:
+                            <span
+                                class="tracking-[0.5em] font-bold text-slate-800"
+                                id="s1-password"
+                                >_ _ _ _</span
+                            >
+                        </div>
+                        <button
+                            onclick="checkStage1()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded transition-colors w-full sm:w-auto shadow-md"
+                        >
+                            Верифікувати
+                        </button>
+                    </div>
+
+                    <!-- Повідомлення про успіх/помилку -->
+                    <div
+                        id="s1-message"
+                        class="hidden mt-4 p-4 rounded-md text-sm font-bold text-center"
+                    ></div>
+                </div>
+            </section>
+
+            <!-- Section: Stage 2 -->
+            <section
+                id="stage2"
+                class="max-w-4xl mx-auto hidden animate-fade-in"
+            >
+                <h2
+                    class="text-3xl font-bold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2"
+                >
+                    <span class="text-blue-600">&#128275;</span> Етап 2:
+                    Відновлення маршрутизації команд
+                </h2>
+
+                <div
+                    class="mb-6 bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500 text-sm text-slate-700"
+                >
+                    <strong>Контекст розділу:</strong> Замість зовнішнього
+                    сервісу (LearningApps), тут реалізовано вбудовану міні-гру
+                    на встановлення відповідностей (Matching game) мовою
+                    JavaScript. Це покращує UX, залишаючи користувача в межах
+                    одного додатку.
+                </div>
+
+                <div
+                    class="bg-slate-900 rounded-t-lg p-4 font-mono text-green-400 text-sm border border-slate-800"
+                >
+                    > Лог системи: Шлюз №1 пройдено. Виявлено пошкодження
+                    словника команд SQL. Застосовано обфускацію коду.
+                </div>
+
+                <div
+                    class="bg-white p-6 rounded-b-lg shadow-sm border border-t-0 border-slate-200 mb-8"
+                >
+                    <p class="mb-6 text-slate-700">
+                        Молодець, детективе! Ти всередині. Але всі основні
+                        оператори SQL забули, що вони роблять.
+                        <strong
+                            >З'єднай SQL-оператор (зліва) з його правильним
+                            призначенням (справа).</strong
+                        >
+                        Клацни на термін, а потім на його пару.
+                    </p>
+
+                    <div
+                        class="grid grid-cols-1 md:grid-cols-2 gap-6"
+                        id="matching-game"
+                    >
+                        <!-- Ліва колонка: Терміни -->
+                        <div class="space-y-3 flex flex-col" id="match-terms">
+                            <!-- Генерується через JS -->
+                        </div>
+                        <!-- Права колонка: Визначення -->
+                        <div class="space-y-3 flex flex-col" id="match-defs">
+                            <!-- Генерується через JS -->
+                        </div>
+                    </div>
+
+                    <!-- Повідомлення про успіх -->
+                    <div
+                        id="s2-message"
+                        class="hidden mt-8 p-4 bg-green-50 border border-green-200 rounded-md text-center"
+                    >
+                        <p class="text-green-800 font-bold mb-2">
+                            Чудова робота! Система маршрутизації відновлена.
+                        </p>
+                        <p class="text-slate-600 mb-4">
+                            Твій Пароль №2:
+                            <strong
+                                class="font-mono bg-white px-2 py-1 border rounded text-lg"
+                                >QUERY_MASTER</strong
+                            >
+                        </p>
+                        <button
+                            onclick="unlockStage3()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded transition-colors shadow-md"
+                        >
+                            Перейти до Етапу 3 &#10148;
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Stage 3 -->
+            <section
+                id="stage3"
+                class="max-w-4xl mx-auto hidden animate-fade-in"
+            >
+                <h2
+                    class="text-3xl font-bold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2"
+                >
+                    <span class="text-red-600">&#128302;</span> Етап 3:
+                    Фінальний запит (Порятунок бази)
+                </h2>
+
+                <div
+                    class="mb-6 bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500 text-sm text-slate-700"
+                >
+                    <strong>Контекст розділу:</strong> Це фінальне завдання,
+                    імітація консолі бази даних. Користувач повинен синтезувати
+                    знання та ввести правильний SQL-запит на основі наданої
+                    таблиці та умов.
+                </div>
+
+                <div
+                    class="bg-slate-900 rounded-t-lg p-4 font-mono text-green-400 text-sm border border-slate-800"
+                >
+                    > Лог системи: Всі шлюзи відкрито. Отримано ПРЯМИЙ ДОСТУП до
+                    таблиці 'transactions'.
+                </div>
+
+                <div
+                    class="bg-white p-6 rounded-b-lg shadow-sm border border-t-0 border-slate-200 mb-8"
+                >
+                    <p class="mb-4 text-slate-700">
+                        Настав момент істини. Ти знаходишся перед консоллю бази
+                        даних. Ми знаємо структуру таблиці
+                        <code>transactions</code>, яку залишив хакер:
+                    </p>
+
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr
+                                    class="bg-slate-100 text-slate-700 border border-slate-200"
+                                >
+                                    <th class="p-2 border border-slate-200">
+                                        Стовпець
+                                    </th>
+                                    <th class="p-2 border border-slate-200">
+                                        Тип даних
+                                    </th>
+                                    <th class="p-2 border border-slate-200">
+                                        Опис
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-slate-600">
+                                <tr>
+                                    <td
+                                        class="p-2 border border-slate-200 font-mono text-blue-600"
+                                    >
+                                        id
+                                    </td>
+                                    <td class="p-2 border border-slate-200">
+                                        INT
+                                    </td>
+                                    <td class="p-2 border border-slate-200">
+                                        Унікальний номер транзакції
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td
+                                        class="p-2 border border-slate-200 font-mono text-blue-600"
+                                    >
+                                        amount
+                                    </td>
+                                    <td class="p-2 border border-slate-200">
+                                        DECIMAL
+                                    </td>
+                                    <td class="p-2 border border-slate-200">
+                                        Сума переказу
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td
+                                        class="p-2 border border-slate-200 font-mono text-blue-600"
+                                    >
+                                        account_from
+                                    </td>
+                                    <td class="p-2 border border-slate-200">
+                                        VARCHAR
+                                    </td>
+                                    <td class="p-2 border border-slate-200">
+                                        Рахунок відправника
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td
+                                        class="p-2 border border-slate-200 font-mono text-blue-600"
+                                    >
+                                        account_to
+                                    </td>
+                                    <td class="p-2 border border-slate-200">
+                                        VARCHAR
+                                    </td>
+                                    <td class="p-2 border border-slate-200">
+                                        Рахунок отримувача
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td
+                                        class="p-2 border border-slate-200 font-mono text-blue-600"
+                                    >
+                                        transaction_date
+                                    </td>
+                                    <td class="p-2 border border-slate-200">
+                                        DATE
+                                    </td>
+                                    <td class="p-2 border border-slate-200">
+                                        Дата переказу
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td
+                                        class="p-2 border border-slate-200 font-mono text-blue-600"
+                                    >
+                                        status
+                                    </td>
+                                    <td class="p-2 border border-slate-200">
+                                        VARCHAR
+                                    </td>
+                                    <td class="p-2 border border-slate-200">
+                                        Статус (Успішно/Відхилено)
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div
+                        class="bg-yellow-50 border border-yellow-200 p-4 rounded-md mb-6"
+                    >
+                        <h4 class="font-bold text-yellow-800 mb-2">
+                            Що нам відомо з логів служби безпеки:
+                        </h4>
+                        <ul
+                            class="list-disc pl-5 text-sm text-yellow-900 space-y-1"
+                        >
+                            <li>
+                                Дата переказу: <strong>'2026-05-01'</strong>
+                            </li>
+                            <li>
+                                Сума переказу:
+                                <strong>більша за 1000000</strong>
+                            </li>
+                            <li>
+                                Статус транзакції: <strong>'Success'</strong>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-slate-700 font-bold mb-2"
+                            >Твоє завдання:</label
+                        >
+                        <p class="text-sm text-slate-600 mb-2">
+                            Напиши SQL-запит, який виведе
+                            <strong
+                                >ТІЛЬКИ номер рахунку отримувача
+                                (<code>account_to</code>)</strong
+                            >
+                            для цієї підозрілої транзакції.
+                        </p>
+                    </div>
+
+                    <!-- Симулятор терміналу -->
+                    <div
+                        class="terminal-bg rounded-lg border border-slate-700 overflow-hidden shadow-inner"
+                    >
+                        <div
+                            class="bg-slate-800 px-4 py-2 border-b border-slate-700 flex items-center gap-2"
+                        >
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div
+                                class="w-3 h-3 rounded-full bg-yellow-500"
+                            ></div>
+                            <div
+                                class="w-3 h-3 rounded-full bg-green-500"
+                            ></div>
+                            <span class="text-slate-400 text-xs ml-2 font-mono"
+                                >db_admin@globalfinance:~/query_builder</span
+                            >
+                        </div>
+                        <textarea
+                            id="sql-input"
+                            rows="4"
+                            class="w-full bg-transparent terminal-text p-4 focus:outline-none resize-none font-mono text-sm md:text-base placeholder-slate-600"
+                            placeholder="Введіть ваш SELECT запит тут..."
+                        ></textarea>
+                    </div>
+
+                    <div class="mt-4 flex justify-end">
+                        <button
+                            onclick="executeFinalQuery()"
+                            class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded transition-colors shadow-md shadow-red-200"
+                        >
+                            Виконати Запит [Enter]
+                        </button>
+                    </div>
+
+                    <!-- Фінальне повідомлення -->
+                    <div
+                        id="final-success"
+                        class="hidden mt-8 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg text-center shadow-sm"
+                    >
+                        <div class="text-5xl mb-4">&#127942;</div>
+                        <h3 class="text-2xl font-bold text-green-800 mb-2">
+                            Місія виконана!
+                        </h3>
+                        <p class="text-green-700 mb-4">
+                            Рахунок хакера (NULL_CH41N_992) заблоковано, гроші в
+                            безпеці.
+                        </p>
+                        <p
+                            class="text-sm text-slate-600 bg-white inline-block px-4 py-2 rounded-full border border-green-100"
+                        >
+                            Керівництво банку (викладач) перевірить твій звіт та
+                            нарахує бали.
+                            <strong>Ти справжній SQL Детектив!</strong>
+                        </p>
+                    </div>
+                    <!-- Повідомлення про помилку в SQL -->
+                    <div
+                        id="final-error"
+                        class="hidden mt-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm font-mono"
+                    >
+                        > Помилка синтаксису або неправильна логіка. Перевірте
+                        оператори SELECT, FROM та умови WHERE.
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <script>
+            // --- 1. Навігація SPA ---
+            function showSection(sectionId, element) {
+                // Сховати всі секції
+                const sections = document.querySelectorAll("main > section");
+                sections.forEach((sec) => {
+                    sec.classList.add("hidden");
+                });
+                // Показати потрібну
+                const targetSection = document.getElementById(sectionId);
+                if (targetSection) {
+                    targetSection.classList.remove("hidden");
+                    // Скидання скролу
+                    document.getElementById("main-content").scrollTop = 0;
+                }
+
+                // Оновлення активного стану в меню
+                if (element) {
+                    const links = document.querySelectorAll(".nav-link");
+                    links.forEach((link) => link.classList.remove("active"));
+                    element.classList.add("active");
+                }
+            }
+
+            // --- 2. Chart.js (Діаграма з Вступу) ---
+            document.addEventListener("DOMContentLoaded", function () {
+                const ctx = document
+                    .getElementById("fundsChart")
+                    .getContext("2d");
+                new Chart(ctx, {
+                    type: "doughnut",
+                    data: {
+                        labels: [
+                            "Вкрадені кошти (Сховано)",
+                            "Заблоковані активи (Клієнтські)",
+                        ],
+                        datasets: [
+                            {
+                                data: [1200500, 3800000],
+                                backgroundColor: ["#dc2626", "#94a3b8"], // red-600, slate-400
+                                borderWidth: 0,
+                                hoverOffset: 4,
+                            },
+                        ],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: "75%",
+                        plugins: {
+                            legend: {
+                                position: "bottom",
+                                labels: {
+                                    font: { family: "'Inter', sans-serif" },
+                                },
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return (
+                                            " $" +
+                                            context.parsed.toLocaleString(
+                                                "en-US",
+                                            )
+                                        );
+                                    },
+                                },
+                            },
+                        },
+                    },
+                });
+
+                initStage1();
+                initStage2();
+            });
+
+            // --- 3. Логіка Етапу 1 (Вікторина) ---
+            const stage1Questions = [
+                "1. Тип даних VARCHAR(255) використовується для зберігання цілих чисел.",
+                "2. Тип даних BOOLEAN може приймати лише значення TRUE, FALSE або NULL.",
+                "3. Оператор * у запиті SELECT * означає 'вибрати всі стовпці з таблиці'.",
+                "4. Первинний ключ (Primary Key) може містити значення NULL.",
+            ];
+            const correctAnswers = ["F", "T", "T", "F"];
+            let userAnswers = [null, null, null, null];
+
+            function initStage1() {
+                const container = document.getElementById("quiz-container");
+                container.innerHTML = "";
+                stage1Questions.forEach((q, index) => {
+                    const row = document.createElement("div");
+                    row.className =
+                        "flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50 p-3 rounded border border-slate-200 gap-3";
+                    row.innerHTML = `
+                    <div class="text-sm text-slate-700 font-medium">${q}</div>
+                    <div class="flex gap-2 shrink-0">
+                        <button onclick="answerQ(${index}, 'T', this)" class="quiz-btn q-${index} px-4 py-1 text-sm rounded border border-slate-300 hover:bg-slate-200 font-bold transition-colors">T</button>
+                        <button onclick="answerQ(${index}, 'F', this)" class="quiz-btn q-${index} px-4 py-1 text-sm rounded border border-slate-300 hover:bg-slate-200 font-bold transition-colors">F</button>
+                    </div>
+                `;
+                    container.appendChild(row);
+                });
+            }
+
+            function answerQ(index, ans, btnElement) {
+                userAnswers[index] = ans;
+                // Оновити UI
+                document
+                    .querySelectorAll(`.q-${index}`)
+                    .forEach((b) =>
+                        b.classList.remove(
+                            "selected",
+                            "bg-blue-600",
+                            "text-white",
+                            "border-blue-600",
+                        ),
+                    );
+                btnElement.classList.add(
+                    "selected",
+                    "bg-blue-600",
+                    "text-white",
+                    "border-blue-600",
+                );
+                btnElement.classList.remove("hover:bg-slate-200");
+                updatePasswordDisplay();
+            }
+
+            function updatePasswordDisplay() {
+                const display = document.getElementById("s1-password");
+                let str = "";
+                for (let i = 0; i < 4; i++) {
+                    str += userAnswers[i] ? userAnswers[i] : "_";
+                }
+                display.textContent = str;
+            }
+
+            function checkStage1() {
+                const msg = document.getElementById("s1-message");
+                msg.classList.remove(
+                    "hidden",
+                    "bg-red-100",
+                    "text-red-700",
+                    "bg-green-100",
+                    "text-green-800",
+                );
+
+                if (userAnswers.includes(null)) {
+                    msg.textContent =
+                        "Будь ласка, дайте відповідь на всі запитання.";
+                    msg.classList.add("bg-yellow-100", "text-yellow-800");
+                    return;
+                }
+
+                const isCorrect = userAnswers.every(
+                    (val, index) => val === correctAnswers[index],
+                );
+
+                if (isCorrect) {
+                    msg.innerHTML =
+                        "Доступ дозволено! Запишіть цей код: <strong>DB_SECURE_99</strong>.<br>Етап 2 розблоковано в меню.";
+                    msg.classList.add("bg-green-100", "text-green-800");
+
+                    // Розблокувати Етап 2 в меню
+                    const nav2 = document.getElementById("nav-stage2");
+                    nav2.disabled = false;
+                    nav2.classList.remove("opacity-50", "cursor-not-allowed");
+                    nav2.classList.add(
+                        "text-slate-600",
+                        "font-bold",
+                        "text-blue-600",
+                    );
+                    nav2.innerHTML = "&#128275; Етап 2: Логіка";
+                } else {
+                    msg.textContent =
+                        "Доступ заборонено. Перевірте логіку (Пароль невірний).";
+                    msg.classList.add("bg-red-100", "text-red-700");
+                }
+            }
+
+            // --- 4. Логіка Етапу 2 (Matching Game) ---
+            const matchData = [
+                { id: "t1", type: "term", text: "SELECT", matchId: "d1" },
+                { id: "t2", type: "term", text: "WHERE", matchId: "d2" },
+                { id: "t3", type: "term", text: "JOIN", matchId: "d3" },
+                { id: "t4", type: "term", text: "ORDER BY", matchId: "d4" },
+                { id: "t5", type: "term", text: "INSERT INTO", matchId: "d5" },
+                {
+                    id: "d3",
+                    type: "def",
+                    text: "Об'єднує рядки з таблиць на основі пов'язаного стовпця",
+                    matchId: "t3",
+                },
+                {
+                    id: "d1",
+                    type: "def",
+                    text: "Вибирає дані з бази даних",
+                    matchId: "t1",
+                },
+                {
+                    id: "d5",
+                    type: "def",
+                    text: "Додає нові записи в таблицю",
+                    matchId: "t5",
+                },
+                {
+                    id: "d2",
+                    type: "def",
+                    text: "Фільтрує записи за заданою умовою",
+                    matchId: "t2",
+                },
+                {
+                    id: "d4",
+                    type: "def",
+                    text: "Сортує результуючий набір",
+                    matchId: "t4",
+                },
+            ];
+
+            let selectedTerm = null;
+            let selectedDef = null;
+            let matchedCount = 0;
+
+            function initStage2() {
+                const termsContainer = document.getElementById("match-terms");
+                const defsContainer = document.getElementById("match-defs");
+
+                matchData.forEach((item) => {
+                    const btn = document.createElement("button");
+                    btn.className = `match-btn p-3 text-sm text-left border border-slate-300 rounded shadow-sm hover:bg-slate-50 font-medium ${item.type === "term" ? "font-mono text-blue-700" : "text-slate-700"}`;
+                    btn.textContent = item.text;
+                    btn.onclick = () => handleMatchClick(btn, item);
+
+                    if (item.type === "term") termsContainer.appendChild(btn);
+                    else defsContainer.appendChild(btn);
+                });
+            }
+
+            function handleMatchClick(btnElement, itemData) {
+                // Ігнорувати якщо вже знайдена пара
+                if (btnElement.classList.contains("matched")) return;
+
+                // Зняти виділення зі старого в тій самій колонці
+                if (itemData.type === "term") {
+                    if (selectedTerm)
+                        selectedTerm.btn.classList.remove("selected");
+                    selectedTerm = { btn: btnElement, data: itemData };
+                } else {
+                    if (selectedDef)
+                        selectedDef.btn.classList.remove("selected");
+                    selectedDef = { btn: btnElement, data: itemData };
+                }
+
+                btnElement.classList.add("selected");
+
+                // Перевірка пари якщо вибрано обидва
+                if (selectedTerm && selectedDef) {
+                    if (selectedTerm.data.matchId === selectedDef.data.id) {
+                        // Збіг!
+                        selectedTerm.btn.classList.replace(
+                            "selected",
+                            "matched",
+                        );
+                        selectedDef.btn.classList.replace(
+                            "selected",
+                            "matched",
+                        );
+                        matchedCount++;
+
+                        // Скидання вибору
+                        selectedTerm = null;
+                        selectedDef = null;
+
+                        if (matchedCount === 5) {
+                            document
+                                .getElementById("s2-message")
+                                .classList.remove("hidden");
+                        }
+                    } else {
+                        // Немає збігу
+                        const tBtn = selectedTerm.btn;
+                        const dBtn = selectedDef.btn;
+                        tBtn.classList.remove("selected");
+                        dBtn.classList.remove("selected");
+                        tBtn.classList.add("error");
+                        dBtn.classList.add("error");
+
+                        setTimeout(() => {
+                            tBtn.classList.remove("error");
+                            dBtn.classList.remove("error");
+                        }, 400);
+
+                        selectedTerm = null;
+                        selectedDef = null;
+                    }
+                }
+            }
+
+            function unlockStage3() {
+                const nav3 = document.getElementById("nav-stage3");
+                nav3.disabled = false;
+                nav3.classList.remove("opacity-50", "cursor-not-allowed");
+                nav3.classList.add(
+                    "text-slate-600",
+                    "font-bold",
+                    "text-red-600",
+                );
+                nav3.innerHTML = "&#128275; Етап 3: Фінал";
+                showSection("stage3", nav3);
+            }
+
+            // --- 5. Логіка Етапу 3 (SQL Термінал) ---
+            function executeFinalQuery() {
+                const input = document
+                    .getElementById("sql-input")
+                    .value.toUpperCase();
+                const errorMsg = document.getElementById("final-error");
+                const successMsg = document.getElementById("final-success");
+
+                errorMsg.classList.add("hidden");
+                successMsg.classList.add("hidden");
+
+                if (!input.trim()) return;
+
+                // Спрощена перевірка ключових слів для симуляції
+                const hasSelect = input.includes("SELECT ACCOUNT_TO");
+                const hasFrom = input.includes("FROM TRANSACTIONS");
+                const hasWhere = input.includes("WHERE");
+                const hasAmount =
+                    input.includes("AMOUNT > 1000000") ||
+                    input.includes("AMOUNT>1000000") ||
+                    input.includes("AMOUNT >= 1000000");
+                const hasDate = input.includes("2026-05-01");
+                const hasStatus = input.includes("SUCCESS");
+                const hasAnd = input.includes("AND");
+
+                if (
+                    hasSelect &&
+                    hasFrom &&
+                    hasWhere &&
+                    hasAmount &&
+                    hasDate &&
+                    hasStatus &&
+                    hasAnd
+                ) {
+                    // Вірно
+                    successMsg.classList.remove("hidden");
+                } else {
+                    // Помилка
+                    errorMsg.classList.remove("hidden");
+                }
+            }
+        </script>
+    </body>
+</html>

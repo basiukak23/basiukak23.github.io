@@ -1,38 +1,58 @@
 <!doctype html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Детектив SQL: Етап 2</title>
-    <script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen overflow-hidden flex flex-col md:flex-row">
-    <nav class="bg-white w-full md:w-64 border-r border-slate-200 flex flex-col h-full shadow-sm">
-        <div class="p-4 border-b bg-slate-100 flex items-center gap-2"><h1 class="font-bold text-lg">Детектив SQL</h1></div>
-        <div class="flex flex-col p-2 gap-1" id="nav-menu">
-            <button onclick="window.location.href='index.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">Брифінг</button>
-            <button onclick="window.location.href='roles.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">Досьє</button>
-            <button onclick="window.location.href='tasks.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">План</button>
-            <button onclick="window.location.href='criteria.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">Оцінювання</button>
-            <button onclick="window.location.href='sources.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">Джерела</button>
-            <div class="border-t my-2"></div>
-            <button onclick="window.location.href='stage1.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">Етап 1</button>
-            <button id="nav-stage2" class="nav-link text-left px-4 py-3 rounded-md text-sm">Етап 2</button>
-            <button id="nav-stage3" class="nav-link text-left px-4 py-3 rounded-md text-sm opacity-50" disabled>Етап 3</button>
+    <!-- Sidebar -->
+    <nav class="bg-white w-full md:w-64 border-r border-slate-200 flex-shrink-0 flex flex-col h-auto md:h-full z-10 shadow-sm">
+        <div class="p-4 border-b border-slate-200 bg-slate-100 flex items-center gap-2">
+            <span class="text-2xl">&#128187;</span>
+            <h1 class="font-bold text-lg leading-tight text-slate-800">Детектив SQL<br /><span class="text-sm font-normal text-slate-500">Пошук зниклих даних</span></h1>
+        </div>
+        <div class="flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto p-2 gap-1" id="nav-menu">
+            <button onclick="window.location.href='index.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#127968; Секретний брифінг</button>
+            <button onclick="window.location.href='roles.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#128100; Твоє досьє</button>
+            <button onclick="window.location.href='tasks.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#128203; План розслідування</button>
+            <button onclick="window.location.href='criteria.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#127942; Оцінювання</button>
+            <button onclick="window.location.href='sources.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#128218; Джерела</button>
+            <div class="mt-2 md:mt-4 mb-2 border-t border-slate-200 pt-2 px-2 text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:block">Місії</div>
+            <button onclick="window.location.href='stage1.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#128275; Етап 1: Метадані</button>
+            <button id="nav-stage2" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 font-bold text-blue-600 whitespace-nowrap md:whitespace-normal">&#128275; Етап 2: Логіка</button>
+            <button id="nav-stage3" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-400 opacity-50 cursor-not-allowed whitespace-nowrap md:whitespace-normal" disabled>&#128274; Етап 3: Фінал</button>
         </div>
     </nav>
-    <main class="flex-1 overflow-y-auto p-8">
-        <h2 class="text-3xl font-bold mb-4 border-b pb-2">Етап 2: Логіка</h2>
-        <div class="bg-slate-900 rounded-t-lg p-4 font-mono text-green-400 text-sm">> З'єднайте SQL-оператор з його призначенням.</div>
-        <div class="bg-white p-6 rounded-b-lg border border-t-0 border-slate-200 mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="matching-game">
-                <div class="space-y-3 flex flex-col" id="match-terms"></div>
-                <div class="space-y-3 flex flex-col" id="match-defs"></div>
+
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+        <section id="stage2" class="max-w-4xl mx-auto block animate-fade-in">
+            <h2 class="text-3xl font-bold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2">
+                <span class="text-blue-600">&#128275;</span> Етап 2: Відновлення маршрутизації команд
+            </h2>
+            <div class="mb-6 bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500 text-sm text-slate-700">
+                <strong>Контекст розділу:</strong> Замість зовнішнього сервісу (LearningApps), тут реалізовано вбудовану міні-гру на встановлення відповідностей (Matching game) мовою JavaScript. Це покращує UX, залишаючи користувача в межах одного додатку.
             </div>
-            <div id="s2-message" class="hidden mt-8 p-4 bg-green-50 border border-green-200 rounded-md text-center">
-                <p class="text-green-800 font-bold mb-2">Чудова робота! Пароль №2: <strong>QUERY_MASTER</strong></p>
-                <button onclick="window.location.href='stage3.html'" class="bg-blue-600 text-white font-bold py-2 px-6 rounded shadow-md">Перейти до Етапу 3 &#10148;</button>
+
+            <div class="bg-slate-900 rounded-t-lg p-4 font-mono text-green-400 text-sm border border-slate-800">
+                > Лог системи: Шлюз №1 пройдено. Виявлено пошкодження словника команд SQL. Застосовано обфускацію коду.
             </div>
-        </div>
+
+            <div class="bg-white p-6 rounded-b-lg shadow-sm border border-t-0 border-slate-200 mb-8">
+                <p class="mb-6 text-slate-700">Молодець, детективе! Ти всередині. Але всі основні оператори SQL забули, що вони роблять. <strong>З'єднай SQL-оператор (зліва) з його правильним призначенням (справа).</strong> Клацни на термін, а потім на його пару.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="matching-game">
+                    <div class="space-y-3 flex flex-col" id="match-terms"></div>
+                    <div class="space-y-3 flex flex-col" id="match-defs"></div>
+                </div>
+                <div id="s2-message" class="hidden mt-8 p-4 bg-green-50 border border-green-200 rounded-md text-center">
+                    <p class="text-green-800 font-bold mb-2">Чудова робота! Система маршрутизації відновлена.</p>
+                    <p class="text-slate-600 mb-4">Твій Пароль №2: <strong class="font-mono bg-white px-2 py-1 border rounded text-lg">QUERY_MASTER</strong></p>
+                    <button onclick="window.location.href='stage3.html'" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded transition-colors shadow-md">Перейти до Етапу 3 &#10148;</button>
+                </div>
+            </div>
+        </section>
     </main>
     <script src="script.js"></script>
     <script>document.addEventListener("DOMContentLoaded", initStage2);</script>

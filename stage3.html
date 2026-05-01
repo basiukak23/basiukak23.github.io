@@ -1,40 +1,102 @@
 <!doctype html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Детектив SQL: Етап 3</title>
-    <script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen overflow-hidden flex flex-col md:flex-row">
-    <nav class="bg-white w-full md:w-64 border-r border-slate-200 flex flex-col h-full shadow-sm">
-        <div class="p-4 border-b bg-slate-100 flex items-center gap-2"><h1 class="font-bold text-lg">Детектив SQL</h1></div>
-        <div class="flex flex-col p-2 gap-1" id="nav-menu">
-            <button onclick="window.location.href='index.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">Брифінг</button>
-            <button onclick="window.location.href='roles.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">Досьє</button>
-            <button onclick="window.location.href='tasks.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">План</button>
-            <button onclick="window.location.href='criteria.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">Оцінювання</button>
-            <button onclick="window.location.href='sources.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">Джерела</button>
-            <div class="border-t my-2"></div>
-            <button onclick="window.location.href='stage1.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm">Етап 1</button>
-            <button id="nav-stage2" class="nav-link text-left px-4 py-3 rounded-md text-sm">Етап 2</button>
-            <button id="nav-stage3" class="nav-link text-left px-4 py-3 rounded-md text-sm">Етап 3</button>
+    <!-- Sidebar -->
+    <nav class="bg-white w-full md:w-64 border-r border-slate-200 flex-shrink-0 flex flex-col h-auto md:h-full z-10 shadow-sm">
+        <div class="p-4 border-b border-slate-200 bg-slate-100 flex items-center gap-2">
+            <span class="text-2xl">&#128187;</span>
+            <h1 class="font-bold text-lg leading-tight text-slate-800">Детектив SQL<br /><span class="text-sm font-normal text-slate-500">Пошук зниклих даних</span></h1>
+        </div>
+        <div class="flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto p-2 gap-1" id="nav-menu">
+            <button onclick="window.location.href='index.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#127968; Секретний брифінг</button>
+            <button onclick="window.location.href='roles.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#128100; Твоє досьє</button>
+            <button onclick="window.location.href='tasks.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#128203; План розслідування</button>
+            <button onclick="window.location.href='criteria.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#127942; Оцінювання</button>
+            <button onclick="window.location.href='sources.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#128218; Джерела</button>
+            <div class="mt-2 md:mt-4 mb-2 border-t border-slate-200 pt-2 px-2 text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:block">Місії</div>
+            <button onclick="window.location.href='stage1.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#128275; Етап 1: Метадані</button>
+            <button onclick="window.location.href='stage2.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#128275; Етап 2: Логіка</button>
+            <button id="nav-stage3" class="nav-link text-left px-4 py-3 rounded-md text-sm text-red-600 font-bold whitespace-nowrap md:whitespace-normal">&#128275; Етап 3: Фінал</button>
         </div>
     </nav>
-    <main class="flex-1 overflow-y-auto p-8">
-        <h2 class="text-3xl font-bold mb-4 border-b pb-2">Етап 3: Фінал</h2>
-        <div class="bg-slate-900 rounded-t-lg p-4 font-mono text-green-400 text-sm">> Отримано ПРЯМИЙ ДОСТУП до таблиці 'transactions'.</div>
-        <div class="bg-white p-6 rounded-b-lg border border-t-0 border-slate-200 mb-8">
-            <p class="mb-4">Напишіть SQL-запит, щоб знайти номер рахунку отримувача.</p>
-            <div class="terminal-bg rounded-lg border border-slate-700 overflow-hidden shadow-inner mb-4">
-                <textarea id="sql-input" rows="4" class="w-full bg-transparent terminal-text p-4 focus:outline-none resize-none font-mono" placeholder="SELECT account_to FROM transactions..."></textarea>
+
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+        <section id="stage3" class="max-w-4xl mx-auto block animate-fade-in">
+            <h2 class="text-3xl font-bold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2">
+                <span class="text-red-600">&#128302;</span> Етап 3: Фінальний запит (Порятунок бази)
+            </h2>
+            <div class="mb-6 bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500 text-sm text-slate-700">
+                <strong>Контекст розділу:</strong> Це фінальне завдання, імітація консолі бази даних. Користувач повинен синтезувати знання та ввести правильний SQL-запит на основі наданої таблиці та умов.
             </div>
-            <div class="flex justify-end"><button onclick="executeFinalQuery()" class="bg-red-600 text-white font-bold py-3 px-8 rounded shadow-md">Виконати Запит</button></div>
-            <div id="final-success" class="hidden mt-8 p-6 bg-green-50 border border-green-200 rounded-lg text-center">
-                <h3 class="text-2xl font-bold text-green-800 mb-2">Місія виконана!</h3>
-                <p class="text-green-700">Рахунок хакера заблоковано. Ти справжній SQL Детектив!</p>
+
+            <div class="bg-slate-900 rounded-t-lg p-4 font-mono text-green-400 text-sm border border-slate-800">
+                > Лог системи: Всі шлюзи відкрито. Отримано ПРЯМИЙ ДОСТУП до таблиці 'transactions'.
             </div>
-            <div id="final-error" class="hidden mt-4 p-4 bg-red-50 text-red-700 rounded-md font-mono">> Помилка синтаксису або неправильна логіка.</div>
-        </div>
+
+            <div class="bg-white p-6 rounded-b-lg shadow-sm border border-t-0 border-slate-200 mb-8">
+                <p class="mb-4 text-slate-700">Настав момент істини. Ти знаходишся перед консоллю бази даних. Ми знаємо структуру таблиці <code>transactions</code>, яку залишив хакер:</p>
+
+                <div class="overflow-x-auto mb-6">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700 border border-slate-200">
+                                <th class="p-2 border border-slate-200">Стовпець</th>
+                                <th class="p-2 border border-slate-200">Тип даних</th>
+                                <th class="p-2 border border-slate-200">Опис</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-slate-600">
+                            <tr><td class="p-2 border border-slate-200 font-mono text-blue-600">id</td><td class="p-2 border border-slate-200">INT</td><td class="p-2 border border-slate-200">Унікальний номер транзакції</td></tr>
+                            <tr><td class="p-2 border border-slate-200 font-mono text-blue-600">amount</td><td class="p-2 border border-slate-200">DECIMAL</td><td class="p-2 border border-slate-200">Сума переказу</td></tr>
+                            <tr><td class="p-2 border border-slate-200 font-mono text-blue-600">account_from</td><td class="p-2 border border-slate-200">VARCHAR</td><td class="p-2 border border-slate-200">Рахунок відправника</td></tr>
+                            <tr><td class="p-2 border border-slate-200 font-mono text-blue-600">account_to</td><td class="p-2 border border-slate-200">VARCHAR</td><td class="p-2 border border-slate-200">Рахунок отримувача</td></tr>
+                            <tr><td class="p-2 border border-slate-200 font-mono text-blue-600">transaction_date</td><td class="p-2 border border-slate-200">DATE</td><td class="p-2 border border-slate-200">Дата переказу</td></tr>
+                            <tr><td class="p-2 border border-slate-200 font-mono text-blue-600">status</td><td class="p-2 border border-slate-200">VARCHAR</td><td class="p-2 border border-slate-200">Статус (Успішно/Відхилено)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-yellow-50 border border-yellow-200 p-4 rounded-md mb-6">
+                    <h4 class="font-bold text-yellow-800 mb-2">Що нам відомо з логів служби безпеки:</h4>
+                    <ul class="list-disc pl-5 text-sm text-yellow-900 space-y-1">
+                        <li>Дата переказу: <strong>'2026-05-01'</strong></li>
+                        <li>Сума переказу: <strong>більша за 1000000</strong></li>
+                        <li>Статус транзакції: <strong>'Success'</strong></li>
+                    </ul>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-slate-700 font-bold mb-2">Твоє завдання:</label>
+                    <p class="text-sm text-slate-600 mb-2">Напиши SQL-запит, який виведе <strong>ТІЛЬКИ номер рахунку отримувача (<code>account_to</code>)</strong> для цієї підозрілої транзакції.</p>
+                </div>
+
+                <div class="terminal-bg rounded-lg border border-slate-700 overflow-hidden shadow-inner">
+                    <div class="bg-slate-800 px-4 py-2 border-b border-slate-700 flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div><div class="w-3 h-3 rounded-full bg-yellow-500"></div><div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        <span class="text-slate-400 text-xs ml-2 font-mono">db_admin@globalfinance:~/query_builder</span>
+                    </div>
+                    <textarea id="sql-input" rows="4" class="w-full bg-transparent terminal-text p-4 focus:outline-none resize-none font-mono text-sm md:text-base placeholder-slate-600" placeholder="Введіть ваш SELECT запит тут..."></textarea>
+                </div>
+
+                <div class="mt-4 flex justify-end">
+                    <button onclick="executeFinalQuery()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded transition-colors shadow-md shadow-red-200">Виконати Запит [Enter]</button>
+                </div>
+
+                <div id="final-success" class="hidden mt-8 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg text-center shadow-sm">
+                    <div class="text-5xl mb-4">&#127942;</div>
+                    <h3 class="text-2xl font-bold text-green-800 mb-2">Місія виконана!</h3>
+                    <p class="text-green-700 mb-4">Рахунок хакера (NULL_CH41N_992) заблоковано, гроші в безпеці.</p>
+                </div>
+                <div id="final-error" class="hidden mt-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm font-mono">> Помилка синтаксису або неправильна логіка.</div>
+            </div>
+        </section>
     </main>
     <script src="script.js"></script>
 </body>

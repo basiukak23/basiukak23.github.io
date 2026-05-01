@@ -6,35 +6,67 @@
     <script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen overflow-hidden flex flex-col md:flex-row">
-    <nav class="bg-white w-full md:w-64 border-r border-slate-200 flex flex-shrink-0 flex flex-col h-auto md:h-full z-10 shadow-sm">
-        <div class="p-4 border-b border-slate-200 bg-slate-100 flex items-center gap-2"><h1 class="font-bold text-lg">Детектив SQL</h1></div>
-        <div class="flex flex-row md:flex-col p-2 gap-1" id="nav-menu">
-            <button onclick="window.location.href='index.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600">Брифінг</button>
-            <button onclick="window.location.href='roles.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600">Досьє</button>
-            <button onclick="window.location.href='tasks.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600">План</button>
-            <button onclick="window.location.href='criteria.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600">Оцінювання</button>
-            <button onclick="window.location.href='sources.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600">Джерела</button>
-            <div class="border-t mt-4 pt-2"></div>
-            <button onclick="window.location.href='stage1.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600">Етап 1</button>
-            <button id="nav-stage2" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-400 opacity-50" disabled>Етап 2</button>
-            <button id="nav-stage3" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-400 opacity-50" disabled>Етап 3</button>
+    <nav class="bg-white w-full md:w-64 border-r border-slate-200 flex-shrink-0 flex flex-col h-auto md:h-full z-10 shadow-sm">
+        <div class="p-4 border-b border-slate-200 bg-slate-100 flex items-center gap-2">
+            <span class="text-2xl">&#128187;</span>
+            <h1 class="font-bold text-lg leading-tight text-slate-800">Детектив SQL<br /><span class="text-sm font-normal text-slate-500">Пошук зниклих даних</span></h1>
+        </div>
+        <div class="flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto p-2 gap-1" id="nav-menu">
+            <button onclick="window.location.href='index.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#127968; Секретний брифінг</button>
+            <button onclick="window.location.href='roles.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#128100; Твоє досьє</button>
+            <button onclick="window.location.href='tasks.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#128203; План розслідування</button>
+            <button onclick="window.location.href='criteria.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#127942; Оцінювання</button>
+            <button onclick="window.location.href='sources.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#128218; Джерела</button>
+            <div class="mt-2 md:mt-4 mb-2 border-t border-slate-200 pt-2 px-2 text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:block">Місії</div>
+            <button onclick="window.location.href='stage1.html'" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-600 hover:bg-slate-100 transition-colors whitespace-nowrap md:whitespace-normal">&#128275; Етап 1: Метадані</button>
+            <button id="nav-stage2" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-400 opacity-50 cursor-not-allowed whitespace-nowrap md:whitespace-normal" disabled>&#128274; Етап 2: Логіка</button>
+            <button id="nav-stage3" class="nav-link text-left px-4 py-3 rounded-md text-sm text-slate-400 opacity-50 cursor-not-allowed whitespace-nowrap md:whitespace-normal" disabled>&#128274; Етап 3: Фінал</button>
         </div>
     </nav>
-    <main class="flex-1 overflow-y-auto p-4 md:p-8">
-        <section id="criteria" class="max-w-4xl mx-auto">
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 relative scroll-smooth">
+        <section id="criteria" class="max-w-4xl mx-auto block animate-fade-in">
             <h2 class="text-3xl font-bold text-slate-800 mb-6 border-b pb-2">Критерії оцінювання</h2>
-            <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-                <table class="w-full text-left border-collapse">
-                    <thead><tr class="bg-slate-50 uppercase text-xs font-bold border-b">
-                        <th class="p-4">Етап</th><th class="p-4">Завдання</th><th class="p-4 text-center">Бали</th>
-                    </tr></thead>
-                    <tbody class="divide-y text-sm">
-                        <tr><td class="p-4">Етап 1</td><td class="p-4">Тест "Типи даних"</td><td class="p-4 text-center">2 бали</td></tr>
-                        <tr><td class="p-4">Етап 2</td><td class="p-4">Гра "Відповідність"</td><td class="p-4 text-center">2 бали</td></tr>
-                        <tr><td class="p-4">Етап 3</td><td class="p-4">Фінальний SQL-запит</td><td class="p-4 text-center">3 бали</td></tr>
-                        <tr><td class="p-4">Дисципліна</td><td class="p-4">Своєчасна здача</td><td class="p-4 text-center">1 бал</td></tr>
-                    </tbody>
-                </table>
+            <div class="bg-white p-0 rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-slate-100 p-4 border-b border-slate-200">
+                    <p class="text-slate-700">За успішне розслідування керівництво банку (викладач) нарахує тобі бали. <br /><strong>Максимальна винагорода за лабораторну роботу — 8 балів.</strong></p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 uppercase text-xs tracking-wider border-b border-slate-200">
+                                <th class="p-4 font-bold">Етап розслідування</th>
+                                <th class="p-4 font-bold">Завдання</th>
+                                <th class="p-4 font-bold text-center">Кількість балів</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-slate-700 text-sm divide-y divide-slate-100">
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="p-4 font-medium">Етап 1</td>
+                                <td class="p-4">Проходження тесту "Чи правдиве твердження?" (Типи даних)</td>
+                                <td class="p-4 text-center font-bold text-blue-600">2 бали</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="p-4 font-medium">Етап 2</td>
+                                <td class="p-4">Вирішення головоломки "Відповідність" (SQL оператори)</td>
+                                <td class="p-4 text-center font-bold text-blue-600">2 бали</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="p-4 font-medium">Етап 3</td>
+                                <td class="p-4">Написання правильного фінального SQL-запиту (SELECT)</td>
+                                <td class="p-4 text-center font-bold text-blue-600">3 бали</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="p-4 font-medium">Дисципліна</td>
+                                <td class="p-4">Своєчасна здача фінального звіту-форми</td>
+                                <td class="p-4 text-center font-bold text-blue-600">1 бал</td>
+                            </tr>
+                            <tr class="bg-slate-100 font-bold border-t-2 border-slate-200">
+                                <td class="p-4 text-right" colspan="2">РАЗОМ:</td>
+                                <td class="p-4 text-center text-lg text-slate-800">8 балів</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
     </main>
